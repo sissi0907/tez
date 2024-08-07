@@ -1,0 +1,36 @@
+name: Reproduce Flaky Tests
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '8'
+          
+      # - name: maven clean install 
+      #   run: mvn clean install -pl hadoop-ozone -am -DskipTests -Dcheckstyle.skip -Drat.skip -U
+        
+      # - name: Compile Module
+      #   run: mvn test-compile -am -Dcheckstyle.skip -Drat.skip -U
+      - name: Check
+        uses: actions/checkout@v3
+        with:
+          ref: a56f9ef4e81002f64d961a195bd68fd5c10e2bee
+  
+      - name: Test with Maven 
+        run: | 
+              for i in {1..5}; do mvn test -pl tez-dag -am -Dtest=org.apache.tez.dag.app.rm.TestContainerReuse -DfailIfNoTests=false -Drat.skip -fae; done#>>test_log_HDDS-8622.txt || echo "Test iteration $i failed">>test_log_HDDS-8622.txt; done
+              
+      # - name: Upload Test Log 
+      #   if: always() 
+      #   uses: actions/upload-artifact@v2 
+      #   with: 
+      #     name: test_log_HDDS-8622
+      #     path: test_log_HDDS-8622.txt
